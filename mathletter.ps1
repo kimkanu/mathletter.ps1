@@ -1,6 +1,6 @@
 ﻿param([string]$Mode = 'help', [int]$No, [string]$Slug, [switch]$Single = $false, [switch]$ShellEscape = $false)
 
-$VERSION = '0.0.6'
+$VERSION = '0.0.7'
 
 $MATHLETTER_STY_RAW_REPO = 'https://raw.githubusercontent.com/msquare-kaist/mathletter-package/master'
 $MATHLETTER_PS1_RAW_REPO = 'https://raw.githubusercontent.com/kimkanu/mathletter.ps1/master'
@@ -202,15 +202,15 @@ function Add-To-Path {
     if (($path -like "*;$rootDir;*") -Or ($path -like "*;$rootDir")) {
         Write-Color "{yellow}[INFO] 이미 PATH에 등록되어 있습니다."
     }
-    elseif ($path.EndsWith(";")) {
-        $path += "$rootDir;"
-        Start-Process -Wait powershell -Verb runAs "[Environment]::SetEnvironmentVariable('path', '$path', 'Machine');"
-        Write-Color "{green}[INFO] PATH에 추가 완료"
-        Write-Color "{yellow}[INFO] {gray}이제 .\ 없이 {yellow}mathletter{gray}으로 실행할 수 있습니다."
-    }
     else {
-        $path += ";$rootDir"
-        Start-Process -Wait powershell -Verb runAs "[Environment]::SetEnvironmentVariable('path', '$path', 'Machine');"
+        if ($path.EndsWith(";")) {
+            $path += "$rootDir;"
+        }
+        else {
+            $path += ";$rootDir"
+        }
+        $env:Path = $path
+        Start-Process -Wait powershell -Verb runAs "[Environment]::SetEnvironmentVariable('path', '$path', [System.EnvironmentVariableTarget]::Machine); [Environment]::SetEnvironmentVariable('path', '$path', [System.EnvironmentVariableTarget]::Process); [Environment]::SetEnvironmentVariable('path', '$path', [System.EnvironmentVariableTarget]::User);"
         Write-Color "{green}[INFO] PATH에 추가 완료"
         Write-Color "{yellow}[INFO] {gray}이제 .\ 없이 {yellow}mathletter{gray}으로 실행할 수 있습니다."
     }

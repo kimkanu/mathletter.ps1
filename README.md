@@ -65,8 +65,9 @@ mathletter -mode cover -no 265
 * [x] 아티클 조판 명령
 * [x] 표지 생성 명령
   - [x] 표지 조판 명령
-* [ ] `-shell-escape`
+* [x] `-shell-escape`
 * [ ] GUI for generating cover.json
+* [x] Automatically decide the TeX live version
 * [ ] Git integration for the `src` directory?
 * [ ] Error handling?
 

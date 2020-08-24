@@ -2,6 +2,10 @@
 
 Math Letter 관리 프로그램입니다. (Windows)
 
+## 다운로드
+
+https://github.com/kimkanu/mathletter.ps1/releases
+
 ## 요구 사항
 
 * PowerShell이 설치되어 있어야 합니다. (테스트한 환경: `PS v5.1.19041.1`, `PS v7.0.3`)

@@ -34,8 +34,8 @@ Math Letter 관리 프로그램입니다. (Windows)
 * [x] ML 생성 명령
 * [x] 아티클 생성 명령
 * [x] 아티클 조판 명령
-* [ ] 표지 생성 명령
-  - [ ] 표지 조판 명령
+* [x] 표지 생성 명령
+  - [x] 표지 조판 명령
 * [ ] Git integration for the `src` directory?
 * [ ] Error handling?
 

@@ -1,6 +1,6 @@
 ﻿param([string]$mode = 'help', [int]$no, [string]$slug, [switch]$single = $false)
 
-$VERSION = '0.0.1'
+$VERSION = '0.0.2'
 $TEXLIVE_VERSION = 2020
 
 $currentDir = $PWD.Path
@@ -164,6 +164,7 @@ function Print-Help {
     Write-Color "    {yellow}font                       {gray}* Math Letter 컴파일에 필요한 폰트들을 설치합니다."
     Write-Color "    {yellow}path                       {gray}* PATH 변수에 ~\.mathletter 경로를 추가합니다."
     Write-Color "    {yellow}update-sty                 {gray}* MathLetter.sty 파일을 업데이트합니다."
+    Write-Color "    {yellow}update-tool                {gray}* MathLetter.ps1 파일을 업데이트합니다."
     Write-Color ""
     Write-Color "    {yellow}new {white}-no {yellow}[ML 번호]          {gray}* 새 Math Letter 폴더를 만듭니다."
     Write-Color "    {yellow}article {white}-no {yellow}[ML 번호]      {gray}* 새 아티클 폴더를 만듭니다."
@@ -200,6 +201,21 @@ function Update-Sty {
         -Uri https://raw.githubusercontent.com/msquare-kaist/mathletter-package/master/MathLetter.sty
     
     Write-Color "{green}[INFO] MathLetter.sty 업데이트 완료"
+}
+
+function Update-Tool {
+    Write-Color "{yellow}[INFO] MathLetter.ps1을 업데이트 하는 중..."
+    $newestVersionString = (New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/kimkanu/mathletter.ps1/master/VERSION')
+    if ($version -eq $VERSION) {
+        Write-Color "{green}[INFO] MathLetter.ps1이 이미 최신 버전입니다."
+    }
+    else {
+        Invoke-WebRequest `
+            -OutFile "$rootDir\mathletter.ps1" `
+            -Uri https://raw.githubusercontent.com/kimkanu/mathletter.ps1/master/mathletter.ps1
+        
+        Write-Color "{green}[INFO] MathLetter.ps1 업데이트 완료"
+    }
 }
 
 if ($mode -eq 'help') {
@@ -331,6 +347,9 @@ elseif ($mode -eq 'path') {
 }
 elseif ($mode -eq 'update-sty') {
     Update-Sty
+}
+elseif ($mode -eq 'update-tool') {
+    Update-Tool
 }
 elseif ($mode -eq 'new') {
     New-Item -ItemType Directory -Force -Path "$rootDir\src" | Out-Null

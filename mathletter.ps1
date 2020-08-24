@@ -1,6 +1,6 @@
 ﻿param([string]$mode = 'help', [int]$no, [string]$slug, [switch]$single = $false)
 
-$VERSION = '0.0.4'
+$VERSION = '0.0.5'
 $TEXLIVE_VERSION = 2020
 
 $MATHLETTER_STY_RAW_REPO = 'https://raw.githubusercontent.com/msquare-kaist/mathletter-package/master'
@@ -169,17 +169,17 @@ function Print-Help {
     Write-Color "    {yellow}font                       {gray}* Math Letter 컴파일에 필요한 폰트들을 설치합니다."
     Write-Color "    {yellow}path                       {gray}* PATH 변수에 ~\.mathletter 경로를 추가합니다."
     Write-Color "    {yellow}update-sty                 {gray}* MathLetter.sty 패키지 파일을 업데이트합니다."
-    Write-Color "    {yellow}update-tool                {gray}* MathLetter.ps1 실행 파일을 업데이트합니다."
+    Write-Color "    {yellow}update-tool                {gray}* MathLetter.ps1 실행 파일과 assets을 업데이트합니다."
     Write-Color ""
     Write-Color "    {yellow}new {white}-no {yellow}[ML 번호]          {gray}* 새 Math Letter 폴더를 만듭니다."
-    Write-Color "    {yellow}open {white}-no {yellow}[ML 번호]         {gray}* ML $no 폴더를 파일 탐색기에서 엽니다."
+    Write-Color "    {yellow}open {white}-no {yellow}[ML 번호]         {gray}* 해당 ML 폴더를 파일 탐색기에서 엽니다."
     Write-Color "    {yellow}article {white}-no {yellow}[ML 번호]      {gray}* 새 아티클 폴더를 만듭니다."
     Write-Color "        {white}-slug {yellow}[폴더 이름]      {gray}  [폴더 이름]에는 알파벳, 숫자, 공백, -나 _만이 들어가야 합니다."
     Write-Color "    {yellow}compile {white}-no {yellow}[ML 번호]      {gray}* 아티클을 컴파일(조판)해서 build 폴더에 pdf 파일을 넣습니다."
     Write-Color "        [{white}-slug {yellow}[폴더 이름]{gray}]      [폴더 이름]에는 알파벳, 숫자, 공백, -나 _만이 들어가야 합니다."
     Write-Color "        {white}[-single]              {gray}  -slug를 생략하면 모든 아티클을 차례로 컴파일합니다."
     Write-Color "                                 -single 옵션을 주면 한 번만 조판합니다. (기본값은 tex->bib->tex)"
-    Write-Color "    {yellow}cover {white}-no {yellow}[ML 번호]        {gray}* cover.json을 기반으로 커버를 만들고 조판합니다."
+    Write-Color "    {yellow}cover {white}-no {yellow}[ML 번호]        {gray}* 해당 ML 폴더의 cover.json을 기반으로 커버를 만들고 조판합니다."
 }
 
 function Add-To-Path {
@@ -358,7 +358,6 @@ elseif ($mode -eq 'path') {
 }
 elseif ($mode -eq 'update-sty') {
     Update-Sty
-    Fetch-Assets
 }
 elseif ($mode -eq 'update-tool') {
     Update-Tool
@@ -578,6 +577,8 @@ elseif ($mode -eq 'cover') {
             -FilePath "$rootDir\texlive\$TEXLIVE_VERSION\bin\win32\xelatex.exe" `
             -ArgumentList "cover.tex"
         Write-Color "{green}[INFO] cover.tex 조판 완료"
+
+        Copy-Item "$rootDir\src\$no\cover\cover.pdf" -Destination "$rootDir\src\$no\build"
     }
 }
 else {

@@ -29,11 +29,12 @@ Math Letter 관리 프로그램입니다. (Windows)
 * `mathletter -mode open -no [ML 번호]`: 해당 ML 폴더를 파일 탐색기에서 엽니다.
 * `mathletter -mode article -no [ML 번호] -slug [폴더 이름]`: 새 아티클 폴더를 만듭니다.
   + [폴더 이름]에는 알파벳, 숫자, 공백, -나 _만이 들어가야 합니다.
-* `mathletter -mode compile -no [ML 번호] [-slug [폴더 이름]] [-single]`: 아티클을 컴파일(조판)해서 build 폴더에 pdf 파일을 넣습니다.
+* `mathletter -mode compile -no [ML 번호] [-slug [폴더 이름]] [-single] [-ShellEscape]`: 아티클을 컴파일(조판)해서 build 폴더에 pdf 파일을 넣습니다.
   + [폴더 이름]에는 알파벳, 숫자, 공백, `-`나 `_`만이 들어가야 합니다. 
   + `-slug`를 생략하면 모든 아티클을 차례로 컴파일합니다.
   + `-single` 옵션을 주면 한 번만 조판합니다. (기본값은 tex->bib->tex)
-* `mathletter -mode cover -no [ML 번호] [-slug [폴더 이름]] [-single]`: 해당 ML 폴더의 cover.json을 기반으로 커버를 만들고 조판합니다.
+  + `-ShellEscape` 옵션을 주면 `-shell-escape`로 조판합니다.
+* `mathletter -mode cover -no [ML 번호]`: 해당 ML 폴더의 cover.json을 기반으로 커버를 만들고 조판합니다.
 
 #### 예시
 
@@ -43,7 +44,8 @@ mathletter -mode article -no 265 -slug 'awesome-article'
      # .mathletter\src\265\articles\awesome-article 안에 sample TeX 파일을 만듭니다.
 mathletter -mode compile -no 265 -slug 'awesome-article'
      # 위에서 만든 아티클을 조판합니다.
-mathletter -mode compile -no 265  # ML 265의 모든 아티클을 조판합니다.
+mathletter -mode compile -no 265 -ShellEscape
+     # ML 265의 모든 아티클을 -shell-escape 모드로 조판합니다.
 mathletter -mode cover -no 265
      # .mathletter\src\265\cover\cover.json 파일을 기반으로 ML 265의 표지를 만듭니다.
 ```

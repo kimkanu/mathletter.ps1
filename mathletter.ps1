@@ -362,6 +362,7 @@ elseif ($mode -eq 'update-sty') {
 }
 elseif ($mode -eq 'update-tool') {
     Update-Tool
+    Fetch-Assets
 }
 elseif ($mode -eq 'new') {
     New-Item -ItemType Directory -Force -Path "$rootDir\src" | Out-Null

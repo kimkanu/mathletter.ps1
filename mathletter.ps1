@@ -1,13 +1,18 @@
 ﻿param([string]$mode = 'help', [int]$no, [string]$slug, [switch]$single = $false)
 
-$VERSION = '0.0.3'
+$VERSION = '0.0.4'
 $TEXLIVE_VERSION = 2020
+
+$MATHLETTER_STY_RAW_REPO = 'https://raw.githubusercontent.com/msquare-kaist/mathletter-package/master'
+$MATHLETTER_PS1_RAW_REPO = 'https://raw.githubusercontent.com/kimkanu/mathletter.ps1/master'
+$MATHLETTER_COVER_RAW_REPO = 'https://raw.githubusercontent.com/kimkanu/mathletter-cover/master'
 
 $currentDir = $PWD.Path
 $rootDir = "$env:USERPROFILE\.mathletter"
 $rootDirSlashed = $rootDir -replace '[\\]', '/'
 $rootDirTilde = '~/.mathletter'
 $tempDir = "$rootDir\.temp"
+$commonstuffDir = "$rootDir\texlive\$TEXLIVE_VERSION\texmf\tex\latex\commonstuff"
 $texliveProfilePath = "$tempDir\texlive.profile"
 $texliveProfileContent = @"
 # texlive.profile written on Sun Aug 23 09:49:02 2020 UTC
@@ -117,6 +122,15 @@ $sampleBibContent = @'
 }
 '@
 
+$path = [Environment]::GetEnvironmentVariable('path', 'machine');
+if (($path -like "*;$rootDir;*") -Or ($path -like "*;$rootDir")) {
+    $prefix = ""
+} else {
+    $prefix = ".\"
+}
+
+Set-Location $rootDir
+
 function Write-Color() {
     Param (
         [string] $text = $(Write-Error "You must specify some text"),
@@ -144,15 +158,6 @@ function Write-Color() {
     $host.UI.RawUI.ForegroundColor = $startColor;
 }
 
-$path = [Environment]::GetEnvironmentVariable('path', 'machine');
-if (($path -like "*;$rootDir;*") -Or ($path -like "*;$rootDir")) {
-    $prefix = ""
-} else {
-    $prefix = ".\"
-}
-
-Set-Location $rootDir
-
 function Print-Help {
     Write-Color "{green}=====> Math Letter Tools v$VERSION <======"
     Write-Color "          사용법:            {yellow}$($prefix)mathletter {white}-mode {yellow}[모드]"
@@ -167,12 +172,14 @@ function Print-Help {
     Write-Color "    {yellow}update-tool                {gray}* MathLetter.ps1 실행 파일을 업데이트합니다."
     Write-Color ""
     Write-Color "    {yellow}new {white}-no {yellow}[ML 번호]          {gray}* 새 Math Letter 폴더를 만듭니다."
+    Write-Color "    {yellow}open {white}-no {yellow}[ML 번호]         {gray}* ML $no 폴더를 파일 탐색기에서 엽니다."
     Write-Color "    {yellow}article {white}-no {yellow}[ML 번호]      {gray}* 새 아티클 폴더를 만듭니다."
     Write-Color "        {white}-slug {yellow}[폴더 이름]      {gray}  [폴더 이름]에는 알파벳, 숫자, 공백, -나 _만이 들어가야 합니다."
     Write-Color "    {yellow}compile {white}-no {yellow}[ML 번호]      {gray}* 아티클을 컴파일(조판)해서 build 폴더에 pdf 파일을 넣습니다."
     Write-Color "        [{white}-slug {yellow}[폴더 이름]{gray}]      [폴더 이름]에는 알파벳, 숫자, 공백, -나 _만이 들어가야 합니다."
     Write-Color "        {white}[-single]              {gray}  -slug를 생략하면 모든 아티클을 차례로 컴파일합니다."
     Write-Color "                                 -single 옵션을 주면 한 번만 조판합니다. (기본값은 tex->bib->tex)"
+    Write-Color "    {yellow}cover {white}-no {yellow}[ML 번호]        {gray}* cover.json을 기반으로 커버를 만들고 조판합니다."
 }
 
 function Add-To-Path {
@@ -194,44 +201,25 @@ function Add-To-Path {
     }
 }
 
-function Update-Sty {
-    Write-Color "{yellow}[INFO] MathLetter.sty를 업데이트 하는 중..."
-    Invoke-WebRequest `
-        -OutFile "$rootDir\texlive\$TEXLIVE_VERSION\texmf\tex\latex\commonstuff\MathLetter.sty" `
-        -Uri https://raw.githubusercontent.com/msquare-kaist/mathletter-package/master/MathLetter.sty
-    
-    Write-Color "{green}[INFO] MathLetter.sty 업데이트 완료"
-}
-
-function Update-Tool {
-    Write-Color "{yellow}[INFO] MathLetter.ps1을 업데이트 하는 중..."
-    $newestVersionString = (New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/kimkanu/mathletter.ps1/master/VERSION')
-    if ($version -eq $VERSION) {
-        Write-Color "{green}[INFO] MathLetter.ps1이 이미 최신 버전입니다."
-    }
-    else {
-        Invoke-WebRequest `
-            -OutFile "$rootDir\mathletter.ps1" `
-            -Uri https://raw.githubusercontent.com/kimkanu/mathletter.ps1/master/mathletter.ps1
-        
-        Write-Color "{green}[INFO] MathLetter.ps1 업데이트 완료"
-    }
-}
-
-if ($mode -eq 'help') {
-    Print-Help
-}
-elseif ($mode -eq 'install') {
-    # clear the directory
+function Clear-TeXLive {
     Write-Color "{yellow}[INFO] 기존 폴더를 삭제하는 중..."
     Remove-Item "$rootDir\texlive" -Recurse -Force
     Write-Color "{green}[INFO] 기존 폴더 삭제 완료"
+}
 
-    # create temp directory
+function Clear-TempDir {
+    Write-Color "{yellow}[INFO] 임시 폴더를 삭제하는 중..."
+    Remove-Item $tempDir -Recurse -Force
+    Write-Color "{green}[INFO] 임시 폴더 삭제 완료"
+}
+
+function Create-TempDir {
     Write-Color "{yellow}[INFO] 임시 폴더를 만드는 중..."
     New-Item -ItemType Directory -Force -Path $tempDir | Out-Null
     Write-Color "{green}[INFO] 임시 폴더 생성 완료"
-    
+}
+
+function Install-TeXLive {
     # download install-tl.zip
     Write-Color "{yellow}[INFO] TeX Live를 다운로드 하는 중..."
     Invoke-WebRequest `
@@ -257,96 +245,120 @@ elseif ($mode -eq 'install') {
     
     # install additional packages
     $tlmgrPath = "$rootDir\texlive\$TEXLIVE_VERSION\bin\win32\tlmgr.bat"
-    $texPackages = 'mwe changepage tcolorbox environ trimspaces ulem xifthen ifmtarg titlesec biblatex adjustbox collectbox tikz-cd pgfplots enumitem forloop minted'
+    $texPackages = 'mwe changepage tcolorbox environ trimspaces ulem xifthen ifmtarg titlesec biblatex adjustbox collectbox tikz-cd pgfplots enumitem forloop minted varwidth datetime pagecolor fmtcount'
     Write-Color "{yellow}[INFO] 추가 패키지를 설치하는 중..."
     Start-Process `
         -NoNewWindow -Wait `
         -FilePath $tlmgrPath `
         -ArgumentList "install $texPackages"
     Write-Color "{green}[INFO] 추가 패키지 설치 완료"
+}
 
-    # install fonts
+function Install-Fonts {
+    Create-TempDir
+    New-Item -ItemType Directory -Force -Path "$rootDir\fonts" | Out-Null
+
     Write-Color "{yellow}[INFO] 폰트를 설치하는 중..."
     "    Noto Sans CJK KR 다운로드 중..."
     Invoke-WebRequest `
         -OutFile "$tempDir\NotoSansCJKkr-hinted.zip" `
         -Uri 'https://noto-website-2.storage.googleapis.com/pkgs/NotoSansCJKkr-hinted.zip'
-    Expand-Archive  -LiteralPath "$tempDir\NotoSansCJKkr-hinted.zip" -DestinationPath "$tempDir\fonts" -Force
-    Get-ChildItem "$tempDir\fonts" | Where-Object {$_.Extension -ne '.otf'} | Remove-Item
+    Expand-Archive  -LiteralPath "$tempDir\NotoSansCJKkr-hinted.zip" -DestinationPath "$rootDir\fonts" -Force
+    Get-ChildItem "$rootDir\fonts" | Where-Object {$_.Extension -ne '.otf'} | Remove-Item
 
     "    Noto Serif CJK KR 다운로드 중..."
     Invoke-WebRequest `
         -OutFile "$tempDir\NotoSerifCJKkr-hinted.zip" `
         -Uri 'https://noto-website-2.storage.googleapis.com/pkgs/NotoSerifCJKkr-hinted.zip'
-    Expand-Archive  -LiteralPath "$tempDir\NotoSerifCJKkr-hinted.zip" -DestinationPath "$tempDir\fonts"
-    Get-ChildItem "$tempDir\fonts" | Where-Object {$_.Extension -ne '.otf'} | Remove-Item
+    Expand-Archive  -LiteralPath "$tempDir\NotoSerifCJKkr-hinted.zip" -DestinationPath "$rootDir\fonts"
+    Get-ChildItem "$rootDir\fonts" | Where-Object {$_.Extension -ne '.otf'} | Remove-Item
     
     "    KoPub 2.0 서체 다운로드 중..."
     Invoke-WebRequest `
         -OutFile "$tempDir\KOPUB2.0_TTF_FONTS.zip" `
         -Uri 'http://www.kopus.org/download/KOPUB2.0_TTF_FONTS.zip'
-    Expand-Archive  -LiteralPath "$tempDir\KOPUB2.0_TTF_FONTS.zip" -DestinationPath "$tempDir\fonts"
-    Get-ChildItem "$tempDir\fonts" | Where-Object {$_.Extension -ne '.ttf'} | Remove-Item
+    Expand-Archive  -LiteralPath "$tempDir\KOPUB2.0_TTF_FONTS.zip" -DestinationPath "$rootDir\fonts"
+    Get-ChildItem "$rootDir\fonts" | Where-Object {($_.Extension -ne '.ttf') -and ($_.Extension -ne '.otf')} | Remove-Item
 
-    $shell = New-Object -ComObject Shell.Application
-    $shell.Namespace(0x14).CopyHere($shell.Namespace("$tempDir\fonts").Items())
-    Write-Color "{green}[INFO] 폰트 설치 완료"
+    Write-Color "{green}[INFO] 폰트 다운로드 완료"
+    Write-Color "{green}[INFO] {red}(중요){green} $rootDir\fonts 폴더에 들어가서 폰트를 모두 선택 후 '모든 사용자용으로' 설치해주세요."
+}
 
-    Write-Color "{yellow}[INFO] 임시 폴더를 삭제하는 중..."
-    Remove-Item $tempDir -Recurse -Force
-    Write-Color "{green}[INFO] 임시 폴더 삭제 완료"
+function Update-Sty {
+    Write-Color "{yellow}[INFO] MathLetter.sty를 업데이트 하는 중..."
+    Invoke-WebRequest `
+        -OutFile "$commonstuffDir\MathLetter.sty" `
+        -Uri "$MATHLETTER_STY_RAW_REPO/MathLetter.sty"
+
+    Write-Color "{green}[INFO] MathLetter.sty 업데이트 완료"
+}
+
+function Fetch-Assets {
+    Write-Color "{yellow}[INFO] 로고 파일을 다운로드 하는 중..."
+    Invoke-WebRequest `
+        -OutFile "$commonstuffDir\math.pdf" `
+        -Uri "$MATHLETTER_COVER_RAW_REPO/math.pdf"
+    Invoke-WebRequest `
+        -OutFile "$commonstuffDir\logo.pdf" `
+        -Uri "$MATHLETTER_COVER_RAW_REPO/logo.pdf"
+    
+    Write-Color "{green}[INFO] 로고 파일 다운로드 완료"
+
+    Write-Color "{yellow}[INFO] 표지 템플릿 파일을 다운로드 하는 중..."
+    Invoke-WebRequest `
+        -OutFile "$commonstuffDir\cover.tex.ps1.template" `
+        -Uri "$MATHLETTER_COVER_RAW_REPO/cover.tex.ps1.template"
+    Invoke-WebRequest `
+        -OutFile "$commonstuffDir\cover.json" `
+        -Uri "$MATHLETTER_COVER_RAW_REPO/cover.json"
+    
+    Write-Color "{green}[INFO] 표지 템플릿 파일 다운로드 완료"
+}
+
+function Update-Tool {
+    Write-Color "{yellow}[INFO] MathLetter.ps1을 업데이트 하는 중..."
+    $newestVersionString = (New-Object System.Net.WebClient).DownloadString("$MATHLETTER_PS1_RAW_REPO/VERSION")
+    if ($version -eq $VERSION) {
+        Write-Color "{green}[INFO] MathLetter.ps1이 이미 최신 버전입니다."
+    }
+    else {
+        Invoke-WebRequest `
+            -OutFile "$rootDir\mathletter.ps1" `
+            -Uri "$MATHLETTER_PS1_RAW_REPO/mathletter.ps1"
+        
+        Write-Color "{green}[INFO] MathLetter.ps1 업데이트 완료"
+    }
+}
+
+if ($mode -eq 'help') {
+    Print-Help
+}
+elseif ($mode -eq 'install') {
+    Clear-TeXLive
+    Create-TempDir
+    Install-TeXLive
+    Install-Fonts
+    Clear-TempDir
 
     Write-Color "{yellow}[INFO] 실행 파일을 {green}'$rootDir'{yellow} 안으로 옮기는 중..."
     Move-Item -Path "$($PWD.Path)\mathletter.ps1" -Destination "$rootDir\mathletter.ps1"
     Write-Color "{green}[INFO] 옮기기 완료"
 
     Update-Sty
-
+    Fetch-Assets
     Add-To-Path
-
-    Remove-Item "$tempDir" -Recurse -Force
-
     Write-Color "=====> {green}설치 완료 {gray}<====="
 }
 elseif ($mode -eq 'font') {
-    Write-Color "{yellow}[INFO] 임시 폴더를 만드는 중..."
-    New-Item -ItemType Directory -Force -Path $tempDir | Out-Null
-    Write-Color "{green}[INFO] 임시 폴더 생성 완료"
-
-    # install fonts
-    Write-Color "{yellow}[INFO] 폰트를 설치하는 중..."
-    "    Noto Sans CJK KR 다운로드 중..."
-    Invoke-WebRequest `
-        -OutFile "$tempDir\NotoSansCJKkr-hinted.zip" `
-        -Uri 'https://noto-website-2.storage.googleapis.com/pkgs/NotoSansCJKkr-hinted.zip'
-    Expand-Archive  -LiteralPath "$tempDir\NotoSansCJKkr-hinted.zip" -DestinationPath "$tempDir\fonts" -Force
-    Get-ChildItem "$tempDir\fonts" | Where-Object {$_.Extension -ne '.otf'} | Remove-Item
-
-    "    Noto Serif CJK KR 다운로드 중..."
-    Invoke-WebRequest `
-        -OutFile "$tempDir\NotoSerifCJKkr-hinted.zip" `
-        -Uri 'https://noto-website-2.storage.googleapis.com/pkgs/NotoSerifCJKkr-hinted.zip'
-    Expand-Archive  -LiteralPath "$tempDir\NotoSerifCJKkr-hinted.zip" -DestinationPath "$tempDir\fonts"
-    Get-ChildItem "$tempDir\fonts" | Where-Object {$_.Extension -ne '.otf'} | Remove-Item
-    
-    "    KoPub 2.0 서체 다운로드 중..."
-    Invoke-WebRequest `
-        -OutFile "$tempDir\KOPUB2.0_TTF_FONTS.zip" `
-        -Uri 'http://www.kopus.org/download/KOPUB2.0_TTF_FONTS.zip'
-    Expand-Archive  -LiteralPath "$tempDir\KOPUB2.0_TTF_FONTS.zip" -DestinationPath "$tempDir\fonts"
-    Get-ChildItem "$tempDir\fonts" | Where-Object {($_.Extension -ne '.otf') -And ($_.Extension -ne '.ttf')} | Remove-Item
-
-    $shell = New-Object -ComObject Shell.Application
-    $shell.Namespace(0x14).CopyHere($shell.Namespace("$tempDir\fonts").Items())
-    Write-Color "{green}[INFO] 폰트 설치 완료"
-
-    Remove-Item "$tempDir" -Recurse -Force
+    Install-Fonts
+    Clear-TempDir
 }
 elseif ($mode -eq 'path') {
     Add-To-Path
 }
 elseif ($mode -eq 'update-sty') {
     Update-Sty
+    Fetch-Assets
 }
 elseif ($mode -eq 'update-tool') {
     Update-Tool
@@ -366,8 +378,29 @@ elseif ($mode -eq 'new') {
         Write-Color "{yellow}[INFO] 새 Math Letter를 만드는 중..."
         New-Item -ItemType directory -Path "$rootDir\src\$no\articles" | Out-Null
         New-Item -ItemType directory -Path "$rootDir\src\$no\problems" | Out-Null
-        New-Item -ItemType directory -Path "$rootDir\src\$no\cover" | Out-Null
         New-Item -ItemType directory -Path "$rootDir\src\$no\build" | Out-Null
+
+        New-Item -ItemType directory -Path "$rootDir\src\$no\cover" | Out-Null
+        Copy-Item "$commonstuffDir\cover.json" -Destination "$rootDir\src\$no\cover"
+
+    }
+}
+elseif ($mode -eq 'open') {
+    New-Item -ItemType Directory -Force -Path "$rootDir\src" | Out-Null
+
+    if (-Not (($no) -and ($no -gt 0))) {
+        Write-Color "{red}[ERROR] ML 번호가 주어지지 않았습니다."
+        Write-Color ""
+        Print-Help
+    }
+    elseif (Test-Path "$rootDir\src\$no") {
+        Write-Color "{yellow}[INFO] ML $no 폴더를 여는 중..."
+        Invoke-Item "$rootDir\src\$no"
+    }
+    else {
+        Write-Color "{red}[ERROR] $rootDir\src\$no 폴더가 존재하지 않습니다."
+        Write-Color ""
+        Print-Help
     }
 }
 elseif ($mode -eq 'article') {
@@ -413,6 +446,11 @@ elseif ($mode -eq 'compile') {
         Write-Color ""
         Print-Help
     }
+    elseif (-Not ((Test-Path "$rootDir\src\$no\articles") -and (Test-Path "$rootDir\src\$no\build"))) {
+        Write-Color "{red}[ERROR] ML $no 폴더가 존재하지 않습니다."
+        Write-Color ""
+        Print-Help
+    }
     elseif (-Not ($slug)) {
         Write-Color "{yellow}[INFO] ML$($no)의 모든 아티클을 조판하는 중..."
         Get-ChildItem "$rootDir\src\$no\articles" | ForEach-Object {
@@ -437,11 +475,6 @@ elseif ($mode -eq 'compile') {
 
             Copy-Item "$rootDir\src\$no\articles\$slug\$slug.pdf" -Destination "$rootDir\src\$no\build"
         }
-    }
-    elseif (-Not ((Test-Path "$rootDir\src\$no\articles") -and (Test-Path "$rootDir\src\$no\build"))) {
-        Write-Color "{red}[ERROR] ML $no 폴더가 존재하지 않습니다."
-        Write-Color ""
-        Print-Help
     }
     elseif (-Not (Test-Path "$rootDir\src\$no\articles\$slug")) {
         Write-Color "{red}[ERROR] 아티클 $($slug)이 존재하지 않습니다."
@@ -468,6 +501,82 @@ elseif ($mode -eq 'compile') {
         }
 
         Copy-Item "$rootDir\src\$no\articles\$slug\$slug.pdf" -Destination "$rootDir\src\$no\build"
+    }
+}
+elseif ($mode -eq 'cover') {
+    New-Item -ItemType Directory -Force -Path "$rootDir\src" | Out-Null
+
+    if (-Not (Test-Path "$rootDir\texlive\$TEXLIVE_VERSION\bin\win32")) {
+        Write-Color "{red}[ERROR] 먼저 $($prefix)mathletter -mode install을 실행해 주세요."
+        Write-Color ""
+        Print-Help
+    }
+    elseif (-Not (($no) -and ($no -gt 0))) {
+        Write-Color "{red}[ERROR] ML 번호가 주어지지 않았습니다."
+        Write-Color ""
+        Print-Help
+    }
+    elseif (-Not ((Test-Path "$rootDir\src\$no\cover") -and (Test-Path "$rootDir\src\$no\build"))) {
+        Write-Color "{red}[ERROR] ML $no 폴더가 존재하지 않습니다."
+        Write-Color ""
+        Print-Help
+    }
+    elseif (-Not (Test-Path "$rootDir\src\$no\cover\cover.json")) {
+        Write-Color "{red}[ERROR] cover.json 파일이 존재하지 않습니다."
+        Write-Color ""
+        Print-Help
+    }
+    else {
+        if (-Not ((Test-Path "$commonstuffDir\math.pdf") -and (Test-Path "$commonstuffDir\logo.pdf") -and (Test-Path "$commonstuffDir\cover.tex.ps1.template"))) {
+            Fetch-Assets
+        }
+        Write-Color "{yellow}[INFO] cover.tex 파일을 만드는 중..."
+
+        $json = (Get-Content "$rootDir\src\$no\cover\cover.json").Replace('<Issue>', $no) | ConvertFrom-Json
+        $articles = $json.Articles | Foreach-Object { "  [$($_.Title)]%" } | Join-String -Separator "`n"
+        $articlePages = $json.Articles | Foreach-Object { "  [$($_.Page)]%" } | Join-String -Separator "`n"
+        $problems = $json.Problems | Foreach-Object { "  [$($_.Title)]%" } | Join-String -Separator "`n"
+        $problemPages = $json.Problems | Foreach-Object { "  [$($_.Page)]%" } | Join-String -Separator "`n"
+        $coverContent = (Get-Content "$commonstuffDir\cover.tex.ps1.template").
+            Replace('<IssueNumber>', $json.Issue).
+            Replace('<Month>', $json.Month).
+            Replace('<Year>', $json.Year).
+            Replace('<DateIssuedKor>', $json.DateIssuedKor).
+            Replace('<DatePrintedKor>', $json.DatePrintedKor).
+            Replace('<NumberOfArticles>', $json.Articles.Length).
+            Replace('<Articles>', $articles).
+            Replace('<ArticlePages>', $articlePages).
+            Replace('<NumberOfProblems>', $json.Problems.Length).
+            Replace('<Problems>', $problems).
+            Replace('<ProblemPages>', $problemPages).
+            Replace('<President>', $json.Officers.President).
+            Replace('<VicePresident>', $json.Officers.VicePresident).
+            Replace('<EditorHead>', $json.Officers.Editor).
+            Replace('<AcademicHead>', $json.Officers.Academic).
+            Replace('<OlympiadHead>', $json.Officers.Olympiad).
+            Replace('<BankAccount>', $json.Club.BankAccount).
+            Replace('<Homepage>', $json.Club.Homepage).
+            Replace('<Email>', $json.Club.Email).
+            Replace('<PostCode>', $json.Club.PostCode).
+            Replace('<Address>', $json.Club.Address).
+            Replace('<Name>', $json.Club.Name).
+            Replace('<SubscriptionPay>', $json.Club.SubscriptionPay).
+            Replace('<Profs>', $json.Club.Profs).
+            Replace('<Publisher>', $json.Club.Publisher)
+        Set-Content -Path "$rootDir\src\$no\cover\cover.tex" -Value $coverContent
+
+        Set-Location "$rootDir\src\$no\cover"
+
+        Write-Color "{yellow}[INFO] cover.tex 파일을 조판하는 중..."
+        Start-Process `
+            -NoNewWindow -Wait `
+            -FilePath "$rootDir\texlive\$TEXLIVE_VERSION\bin\win32\xelatex.exe" `
+            -ArgumentList "cover.tex"
+        Start-Process `
+            -NoNewWindow -Wait `
+            -FilePath "$rootDir\texlive\$TEXLIVE_VERSION\bin\win32\xelatex.exe" `
+            -ArgumentList "cover.tex"
+        Write-Color "{green}[INFO] cover.tex 조판 완료"
     }
 }
 else {

@@ -19,6 +19,10 @@ Math Letter 관리 프로그램입니다. (Windows)
 
 `mathletter -mode help`를 참조하세요.
 
+## 오류 발생 시
+
+이슈 트래커나 톡으로 말씀해주세요.
+
 ## TODO
 
 * [x] 도움말
@@ -34,3 +38,7 @@ Math Letter 관리 프로그램입니다. (Windows)
   - [ ] 표지 조판 명령
 * [ ] Git integration for the `src` directory?
 * [ ] Error handling?
+
+## Why XeLaTeX?
+
+가능하면 LuaLaTeX을 쓰고 싶었으나 Noto 폰트가 용량이 커서 luaotfload가 out of memory로 죽기 때문에 XeLaTeX으로 컴파일합니다. 이 문제를 해결할 workaround가 있으면 LuaLaTeX으로 변경할 예정입니다.

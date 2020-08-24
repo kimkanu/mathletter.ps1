@@ -1,6 +1,6 @@
 ﻿param([string]$mode = 'help', [int]$no, [string]$slug, [switch]$single = $false)
 
-$VERSION = '0.0.2'
+$VERSION = '0.0.3'
 $TEXLIVE_VERSION = 2020
 
 $currentDir = $PWD.Path
@@ -145,15 +145,15 @@ function Write-Color() {
 }
 
 $path = [Environment]::GetEnvironmentVariable('path', 'machine');
+if (($path -like "*;$rootDir;*") -Or ($path -like "*;$rootDir")) {
+    $prefix = ""
+} else {
+    $prefix = ".\"
+}
 
 Set-Location $rootDir
 
 function Print-Help {
-    if (($path -like "*;$rootDir;*") -Or ($path -like "*;$rootDir")) {
-        $prefix = ""
-    } else {
-        $prefix = ".\"
-    }
     Write-Color "{green}=====> Math Letter Tools v$VERSION <======"
     Write-Color "          사용법:            {yellow}$($prefix)mathletter {white}-mode {yellow}[모드]"
     Write-Color "사용법 (cmd.exe): {white}powershell {yellow}$($prefix)mathletter {white}-mode {yellow}[모드]"
@@ -163,8 +163,8 @@ function Print-Help {
     Write-Color "    {yellow}install                    {gray}* Math Letter 컴파일에 필요한 프로그램들을 설치합니다."
     Write-Color "    {yellow}font                       {gray}* Math Letter 컴파일에 필요한 폰트들을 설치합니다."
     Write-Color "    {yellow}path                       {gray}* PATH 변수에 ~\.mathletter 경로를 추가합니다."
-    Write-Color "    {yellow}update-sty                 {gray}* MathLetter.sty 파일을 업데이트합니다."
-    Write-Color "    {yellow}update-tool                {gray}* MathLetter.ps1 파일을 업데이트합니다."
+    Write-Color "    {yellow}update-sty                 {gray}* MathLetter.sty 패키지 파일을 업데이트합니다."
+    Write-Color "    {yellow}update-tool                {gray}* MathLetter.ps1 실행 파일을 업데이트합니다."
     Write-Color ""
     Write-Color "    {yellow}new {white}-no {yellow}[ML 번호]          {gray}* 새 Math Letter 폴더를 만듭니다."
     Write-Color "    {yellow}article {white}-no {yellow}[ML 번호]      {gray}* 새 아티클 폴더를 만듭니다."
@@ -354,129 +354,120 @@ elseif ($mode -eq 'update-tool') {
 elseif ($mode -eq 'new') {
     New-Item -ItemType Directory -Force -Path "$rootDir\src" | Out-Null
 
-    if (($no) -and ($no -gt 0)) {
-        if (Test-Path "$rootDir\src\$no") {
-            Write-Color "{red}[ERROR] $rootDir\src\$($no)이(가) 이미 존재합니다."
-        }
-        else {
-            Write-Color "{yellow}[INFO] 새 Math Letter를 만드는 중..."
-            New-Item -ItemType directory -Path "$rootDir\src\$no\articles" | Out-Null
-            New-Item -ItemType directory -Path "$rootDir\src\$no\problems" | Out-Null
-            New-Item -ItemType directory -Path "$rootDir\src\$no\cover" | Out-Null
-            New-Item -ItemType directory -Path "$rootDir\src\$no\build" | Out-Null
-        }
-    }
-    else {
+    if (-Not (($no) -and ($no -gt 0))) {
         Write-Color "{red}[ERROR] ML 번호가 주어지지 않았습니다."
         Write-Color ""
         Print-Help
+    }
+    elseif (Test-Path "$rootDir\src\$no") {
+        Write-Color "{red}[ERROR] $rootDir\src\$($no)이(가) 이미 존재합니다."
+    }
+    else {
+        Write-Color "{yellow}[INFO] 새 Math Letter를 만드는 중..."
+        New-Item -ItemType directory -Path "$rootDir\src\$no\articles" | Out-Null
+        New-Item -ItemType directory -Path "$rootDir\src\$no\problems" | Out-Null
+        New-Item -ItemType directory -Path "$rootDir\src\$no\cover" | Out-Null
+        New-Item -ItemType directory -Path "$rootDir\src\$no\build" | Out-Null
     }
 }
 elseif ($mode -eq 'article') {
     New-Item -ItemType Directory -Force -Path "$rootDir\src" | Out-Null
 
-    if (($no) -and ($no -gt 0)) {
-        if ($slug) {
-            if ((Test-Path "$rootDir\src\$no\articles") -and (Test-Path "$rootDir\src\$no\build")) {
-                if (Test-Path "$rootDir\src\$no\articles\$slug") {
-                    Write-Color "{red}[ERROR] 아티클 $($slug)이(가) 이미 존재합니다."
-                    Write-Color ""
-                    Print-Help
-                }
-                else {
-                    Write-Color "{yellow}[INFO] ML$($no)에 새 아티클을 만드는 중..."
-                    New-Item -ItemType directory -Path "$rootDir\src\$no\articles\$slug" | Out-Null
-                    Set-Content -Path "$rootDir\src\$no\articles\$slug\$slug.tex" -Value $sampleTeXContent
-                    Set-Content -Path "$rootDir\src\$no\articles\$slug\$slug.bib" -Value $sampleBibContent
-                }
-            }
-            else {
-                Write-Color "{red}[ERROR] ML $no 폴더가 존재하지 않습니다."
-                Write-Color ""
-                Print-Help
-            }
-        }
-        else {
-            Write-Color "{red}[ERROR] 아티클 폴더 이름이 주어지지 않았습니다."
-            Write-Color ""
-            Print-Help
-        }
-    }
-    else {
+    if (-Not (($no) -and ($no -gt 0))) {
         Write-Color "{red}[ERROR] ML 번호가 주어지지 않았습니다."
         Write-Color ""
         Print-Help
+    }
+    elseif (-Not ($slug)) {
+        Write-Color "{red}[ERROR] 아티클 폴더 이름이 주어지지 않았습니다."
+        Write-Color ""
+        Print-Help
+    }
+    elseif (-Not ((Test-Path "$rootDir\src\$no\articles") -and (Test-Path "$rootDir\src\$no\build"))) {
+        Write-Color "{red}[ERROR] ML $no 폴더가 존재하지 않습니다."
+        Write-Color ""
+        Print-Help
+    }
+    elseif (Test-Path "$rootDir\src\$no\articles\$slug") {
+        Write-Color "{red}[ERROR] 아티클 $($slug)이(가) 이미 존재합니다."
+        Write-Color ""
+        Print-Help
+    }
+    else {
+        Write-Color "{yellow}[INFO] ML$($no)에 새 아티클을 만드는 중..."
+        New-Item -ItemType directory -Path "$rootDir\src\$no\articles\$slug" | Out-Null
+        Set-Content -Path "$rootDir\src\$no\articles\$slug\$slug.tex" -Value $sampleTeXContent
+        Set-Content -Path "$rootDir\src\$no\articles\$slug\$slug.bib" -Value $sampleBibContent
     }
 }
 elseif ($mode -eq 'compile') {
     New-Item -ItemType Directory -Force -Path "$rootDir\src" | Out-Null
 
-    if (($no) -and ($no -gt 0)) {
-        if ($slug) {
-            if ((Test-Path "$rootDir\src\$no\articles") -and (Test-Path "$rootDir\src\$no\build")) {
-                if (Test-Path "$rootDir\src\$no\articles\$slug") {
-                    Set-Location "$rootDir\src\$no\articles\$slug"
-                    
-                    Write-Color "{yellow}[INFO] ML$($no)의 아티클 $($slug)을(를) 조판하는 중..."
-                    Start-Process `
-                        -NoNewWindow -Wait `
-                        -FilePath "$rootDir\texlive\$TEXLIVE_VERSION\bin\win32\xelatex.exe" `
-                        -ArgumentList "$slug.tex"
-                    if ($single -eq $false) {
-                        Start-Process `
-                            -NoNewWindow -Wait `
-                            -FilePath "$rootDir\texlive\$TEXLIVE_VERSION\bin\win32\bibtex.exe" `
-                            -ArgumentList "$slug.aux"
-                        Start-Process `
-                            -NoNewWindow -Wait `
-                            -FilePath "$rootDir\texlive\$TEXLIVE_VERSION\bin\win32\xelatex.exe" `
-                            -ArgumentList "$slug.tex"
-                    }
+    if (-Not (Test-Path "$rootDir\texlive\$TEXLIVE_VERSION\bin\win32")) {
+        Write-Color "{red}[ERROR] 먼저 $($prefix)mathletter -mode install을 실행해 주세요."
+        Write-Color ""
+        Print-Help
+    }
+    elseif (-Not (($no) -and ($no -gt 0))) {
+        Write-Color "{red}[ERROR] ML 번호가 주어지지 않았습니다."
+        Write-Color ""
+        Print-Help
+    }
+    elseif (-Not ($slug)) {
+        Write-Color "{yellow}[INFO] ML$($no)의 모든 아티클을 조판하는 중..."
+        Get-ChildItem "$rootDir\src\$no\articles" | ForEach-Object {
+            $slug = $_.BaseName
+            Set-Location "$rootDir\src\$no\articles\$slug"
 
-                    Copy-Item "$rootDir\src\$no\articles\$slug\$slug.pdf" -Destination "$rootDir\src\$no\build"
-                }
-                else {
-                    Write-Color "{red}[ERROR] 아티클 $($slug)이 존재하지 않습니다."
-                    Write-Color ""
-                    Print-Help
-                }
-            }
-            else {
-                Write-Color "{red}[ERROR] ML $no 폴더가 존재하지 않습니다."
-                Write-Color ""
-                Print-Help
-            }
-        }
-        else {
-            Write-Color "{yellow}[INFO] ML$($no)의 모든 아티클을 조판하는 중..."
-            Get-ChildItem "$rootDir\src\$no\articles" | ForEach-Object {
-                $slug = $_.BaseName
-                Set-Location "$rootDir\src\$no\articles\$slug"
-
-                Write-Color "{yellow}[INFO] ML$($no)의 아티클 $($slug)을(를) 조판하는 중..."
+            Write-Color "{yellow}[INFO] ML$($no)의 아티클 $($slug)을(를) 조판하는 중..."
+            Start-Process `
+                -NoNewWindow -Wait `
+                -FilePath "$rootDir\texlive\$TEXLIVE_VERSION\bin\win32\xelatex.exe" `
+                -ArgumentList "$slug.tex"
+            if ($single -eq $false) {
+                Start-Process `
+                    -NoNewWindow -Wait `
+                    -FilePath "$rootDir\texlive\$TEXLIVE_VERSION\bin\win32\bibtex.exe" `
+                    -ArgumentList "$slug.aux"
                 Start-Process `
                     -NoNewWindow -Wait `
                     -FilePath "$rootDir\texlive\$TEXLIVE_VERSION\bin\win32\xelatex.exe" `
                     -ArgumentList "$slug.tex"
-                if ($single -eq $false) {
-                    Start-Process `
-                        -NoNewWindow -Wait `
-                        -FilePath "$rootDir\texlive\$TEXLIVE_VERSION\bin\win32\bibtex.exe" `
-                        -ArgumentList "$slug.aux"
-                    Start-Process `
-                        -NoNewWindow -Wait `
-                        -FilePath "$rootDir\texlive\$TEXLIVE_VERSION\bin\win32\xelatex.exe" `
-                        -ArgumentList "$slug.tex"
-                }
-
-                Copy-Item "$rootDir\src\$no\articles\$slug\$slug.pdf" -Destination "$rootDir\src\$no\build"
             }
+
+            Copy-Item "$rootDir\src\$no\articles\$slug\$slug.pdf" -Destination "$rootDir\src\$no\build"
         }
     }
-    else {
-        Write-Color "{red}[ERROR] ML 번호가 주어지지 않았습니다."
+    elseif (-Not ((Test-Path "$rootDir\src\$no\articles") -and (Test-Path "$rootDir\src\$no\build"))) {
+        Write-Color "{red}[ERROR] ML $no 폴더가 존재하지 않습니다."
         Write-Color ""
         Print-Help
+    }
+    elseif (-Not (Test-Path "$rootDir\src\$no\articles\$slug")) {
+        Write-Color "{red}[ERROR] 아티클 $($slug)이 존재하지 않습니다."
+        Write-Color ""
+        Print-Help
+    }
+    else {
+        Set-Location "$rootDir\src\$no\articles\$slug"
+        
+        Write-Color "{yellow}[INFO] ML$($no)의 아티클 $($slug)을(를) 조판하는 중..."
+        Start-Process `
+            -NoNewWindow -Wait `
+            -FilePath "$rootDir\texlive\$TEXLIVE_VERSION\bin\win32\xelatex.exe" `
+            -ArgumentList "$slug.tex"
+        if ($single -eq $false) {
+            Start-Process `
+                -NoNewWindow -Wait `
+                -FilePath "$rootDir\texlive\$TEXLIVE_VERSION\bin\win32\bibtex.exe" `
+                -ArgumentList "$slug.aux"
+            Start-Process `
+                -NoNewWindow -Wait `
+                -FilePath "$rootDir\texlive\$TEXLIVE_VERSION\bin\win32\xelatex.exe" `
+                -ArgumentList "$slug.tex"
+        }
+
+        Copy-Item "$rootDir\src\$no\articles\$slug\$slug.pdf" -Destination "$rootDir\src\$no\build"
     }
 }
 else {

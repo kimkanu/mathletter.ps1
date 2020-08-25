@@ -25,50 +25,6 @@ else {
 }
 $tempDir = "$rootDir\.temp"
 $commonstuffDir = "$rootDir\texlive\$TEXLIVE_VERSION\texmf\tex\latex\commonstuff"
-$texliveProfilePath = "$tempDir\texlive.profile"
-$texliveProfileContent = @"
-# texlive.profile written on Sun Aug 23 09:49:02 2020 UTC
-# It will NOT be updated and reflects only the
-# installation profile at installation time.
-selected_scheme scheme-custom
-TEXDIR $rootDirSlashed/texlive/$TEXLIVE_VERSION
-TEXMFCONFIG $rootDirTilde/texlive/$TEXLIVE_VERSION/texmf-config
-TEXMFHOME $rootDirTilde/texlive/$TEXLIVE_VERSION/texmf
-TEXMFLOCAL $rootDirSlashed/texlive/texmf-local
-TEXMFSYSCONFIG $rootDirSlashed/texlive/$TEXLIVE_VERSION/texmf-config
-TEXMFSYSVAR $rootDirSlashed/texlive/$TEXLIVE_VERSION/texmf-var
-TEXMFVAR $rootDirTilde/texlive/$TEXLIVE_VERSION/texmf-var
-binary_win32 1
-collection-basic 1
-collection-fontsrecommended 1
-collection-fontutils 1
-collection-langcjk 1
-collection-langkorean 1
-collection-latex 1
-collection-latexrecommended 1
-collection-luatex 1
-collection-mathscience 1
-collection-wintools 1
-collection-xetex 1
-instopt_adjustpath 1
-instopt_adjustrepo 1
-instopt_letter 0
-instopt_portable 0
-instopt_write18_restricted 1
-tlpdbopt_autobackup 1
-tlpdbopt_backupdir tlpkg/backups
-tlpdbopt_create_formats 1
-tlpdbopt_desktop_integration 0
-tlpdbopt_file_assocs 0
-tlpdbopt_generate_updmap 0
-tlpdbopt_install_docfiles 1
-tlpdbopt_install_srcfiles 1
-tlpdbopt_post_code 1
-tlpdbopt_sys_bin /usr/local/bin
-tlpdbopt_sys_info /usr/local/share/info
-tlpdbopt_sys_man /usr/local/share/man
-tlpdbopt_w32_multi_user 0
-"@
 
 $sampleTeXContent = @"
 % !TeX program = xelatex
@@ -228,17 +184,67 @@ function Clear-TeXLive {
 
 function Clear-TempDir {
     Write-Color "{yellow}[INFO] 임시 폴더를 삭제하는 중..."
-    Remove-Item $tempDir -Recurse -Force
+    if (Test-Path -Path $tempDir) {
+        Remove-Item $tempDir -Recurse -Force
+    }
     Write-Color "{green}[INFO] 임시 폴더 삭제 완료"
 }
 
 function New-TempDir {
+    Clear-TempDir
     Write-Color "{yellow}[INFO] 임시 폴더를 만드는 중..."
     New-Item -ItemType Directory -Force -Path $tempDir | Out-Null
     Write-Color "{green}[INFO] 임시 폴더 생성 완료"
 }
 
 function Install-TeXLive {
+    @((Invoke-Webrequest -URI https://www.tug.org/texlive/acquire.html).ParsedHtml.getElementsByTagName("p"))[0].innerText -match "[0-9]+" | Out-Null
+    $RECENT_TEXLIVE_VERSION = $Matches.0
+    $texliveProfilePath = "$tempDir\texlive.profile"
+    $texliveProfileContent = @"
+    # texlive.profile written on Sun Aug 23 09:49:02 2020 UTC
+    # It will NOT be updated and reflects only the
+    # installation profile at installation time.
+    selected_scheme scheme-custom
+    TEXDIR $rootDirSlashed/texlive/$RECENT_TEXLIVE_VERSION
+    TEXMFCONFIG $rootDirTilde/texlive/$RECENT_TEXLIVE_VERSION/texmf-config
+    TEXMFHOME $rootDirTilde/texlive/$RECENT_TEXLIVE_VERSION/texmf
+    TEXMFLOCAL $rootDirSlashed/texlive/texmf-local
+    TEXMFSYSCONFIG $rootDirSlashed/texlive/$RECENT_TEXLIVE_VERSION/texmf-config
+    TEXMFSYSVAR $rootDirSlashed/texlive/$RECENT_TEXLIVE_VERSION/texmf-var
+    TEXMFVAR $rootDirTilde/texlive/$RECENT_TEXLIVE_VERSION/texmf-var
+    binary_win32 1
+    collection-basic 1
+    collection-fontsrecommended 1
+    collection-fontutils 1
+    collection-langcjk 1
+    collection-langkorean 1
+    collection-latex 1
+    collection-latexrecommended 1
+    collection-luatex 1
+    collection-mathscience 1
+    collection-wintools 1
+    collection-xetex 1
+    instopt_adjustpath 1
+    instopt_adjustrepo 1
+    instopt_letter 0
+    instopt_portable 0
+    instopt_write18_restricted 1
+    tlpdbopt_autobackup 1
+    tlpdbopt_backupdir tlpkg/backups
+    tlpdbopt_create_formats 1
+    tlpdbopt_desktop_integration 0
+    tlpdbopt_file_assocs 0
+    tlpdbopt_generate_updmap 0
+    tlpdbopt_install_docfiles 1
+    tlpdbopt_install_srcfiles 1
+    tlpdbopt_post_code 1
+    tlpdbopt_sys_bin /usr/local/bin
+    tlpdbopt_sys_info /usr/local/share/info
+    tlpdbopt_sys_man /usr/local/share/man
+    tlpdbopt_w32_multi_user 0
+"@
+
     # download install-tl.zip
     Write-Color "{yellow}[INFO] TeX Live를 다운로드 하는 중..."
     Invoke-WebRequest `

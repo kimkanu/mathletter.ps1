@@ -220,7 +220,9 @@ function Add-To-Path {
 
 function Clear-TeXLive {
     Write-Color "{yellow}[INFO] 기존 폴더를 삭제하는 중..."
-    Remove-Item "$rootDir\texlive" -Recurse -Force
+    if (Test-Path -Path "$rootDir\texlive") {
+        Remove-Item "$rootDir\texlive" -Recurse -Force
+    }
     Write-Color "{green}[INFO] 기존 폴더 삭제 완료"
 }
 

@@ -141,7 +141,9 @@ if (($path -like "*;$rootDir;*") -Or ($path -like "*;$rootDir")) {
     $prefix = ".\"
 }
 
-Set-Location $rootDir
+if (Test-Path -Path $rootDir) {
+    Set-Location $rootDir
+}
 
 function Write-Color() {
     Param (

@@ -1,6 +1,6 @@
 ﻿param([string]$Mode = 'help', [int]$No, [string]$Slug, [switch]$Single = $false, [switch]$ShellEscape = $false)
 
-$VERSION = '0.0.7'
+$VERSION = '0.1.0'
 
 $MATHLETTER_STY_RAW_REPO = 'https://raw.githubusercontent.com/msquare-kaist/mathletter-package/master'
 $MATHLETTER_PS1_RAW_REPO = 'https://raw.githubusercontent.com/kimkanu/mathletter.ps1/master'
@@ -14,7 +14,7 @@ if (-Not (Test-Path "$rootDir\texlive")) {
     $TEXLIVE_VERSION = '{red}NOT INSTALLED'
 }
 else {
-    $TEXLIVE_DISTS = (Get-ChildItem "$rootDir\texlive" | ForEach-Object { $_.Name } | Where-Object { $_ -match "^\d+$" } | ForEach-Object { [int]$_ } | Measure -Maximum)
+    $TEXLIVE_DISTS = (Get-ChildItem "$rootDir\texlive" | ForEach-Object { $_.Name } | Where-Object { $_ -match "^\d+$" } | ForEach-Object { [int]$_ } | Measure-Object -Maximum)
 
     if ($TEXLIVE_DISTS.Count -eq 0) {
         $TEXLIVE_VERSION = '{red}NOT INSTALLED'
@@ -170,7 +170,7 @@ function Write-Color() {
     $host.UI.RawUI.ForegroundColor = $startColor;
 }
 
-function Print-Help {
+function Write-Help {
     Write-Color "{green}=====> Math Letter Tools v$VERSION <======"
     Write-Color "TeX Live 버전: {yellow}$TEXLIVE_VERSION"
     Write-Color ""
@@ -228,7 +228,7 @@ function Clear-TempDir {
     Write-Color "{green}[INFO] 임시 폴더 삭제 완료"
 }
 
-function Create-TempDir {
+function New-TempDir {
     Write-Color "{yellow}[INFO] 임시 폴더를 만드는 중..."
     New-Item -ItemType Directory -Force -Path $tempDir | Out-Null
     Write-Color "{green}[INFO] 임시 폴더 생성 완료"
@@ -258,7 +258,7 @@ function Install-TeXLive {
         -ArgumentList "-no-gui -profile $tempDir\texlive.profile -non-admin"
     Write-Color "{green}[INFO] TeX Live 설치 완료"
     
-    $TEXLIVE_DISTS = (Get-ChildItem "texlive" | ForEach-Object { $_.Name } | Where-Object { $_ -match "^\d+$" } | ForEach-Object { [int]$_ } | Measure -Maximum)
+    $TEXLIVE_DISTS = (Get-ChildItem "texlive" | ForEach-Object { $_.Name } | Where-Object { $_ -match "^\d+$" } | ForEach-Object { [int]$_ } | Measure-Object -Maximum)
     if ($TEXLIVE_DISTS.Count -gt 0) {
         $TEXLIVE_VERSION = $TEXLIVE_DISTS.Maximum
     }
@@ -275,7 +275,7 @@ function Install-TeXLive {
 }
 
 function Install-Fonts {
-    Create-TempDir
+    New-TempDir
     New-Item -ItemType Directory -Force -Path "$rootDir\fonts" | Out-Null
 
     Write-Color "{yellow}[INFO] 폰트를 설치하는 중..."
@@ -304,6 +304,12 @@ function Install-Fonts {
     Write-Color "{green}[INFO] {red}(중요){green} $rootDir\fonts 폴더에 들어가서 폰트를 모두 선택 후 '모든 사용자용으로' 설치해주세요."
 }
 
+function New-CommonstuffDir {
+    Write-Color "{yellow}[INFO] commonstuff 폴더를 만드는 중..."
+    New-Item -ItemType Directory -Force -Path "$rootDir\texlive\$TEXLIVE_VERSION\texmf\tex\latex\commonstuff" | Out-Null
+    Write-Color "{green}[INFO] commonstuff 폴더 생성 완료"
+}
+
 function Update-Sty {
     Write-Color "{yellow}[INFO] MathLetter.sty를 업데이트 하는 중..."
     Invoke-WebRequest `
@@ -313,7 +319,7 @@ function Update-Sty {
     Write-Color "{green}[INFO] MathLetter.sty 업데이트 완료"
 }
 
-function Fetch-Assets {
+function Invoke-Assets {
     Write-Color "{yellow}[INFO] 로고 파일을 다운로드 하는 중..."
     Invoke-WebRequest `
         -OutFile "$commonstuffDir\math.pdf" `
@@ -338,7 +344,7 @@ function Fetch-Assets {
 function Update-Tool {
     Write-Color "{yellow}[INFO] MathLetter.ps1을 업데이트 하는 중..."
     $newestVersionString = (New-Object System.Net.WebClient).DownloadString("$MATHLETTER_PS1_RAW_REPO/VERSION")
-    if ($version -eq $VERSION) {
+    if ($newestVersionString -eq $VERSION) {
         Write-Color "{green}[INFO] MathLetter.ps1이 이미 최신 버전입니다."
     }
     else {
@@ -351,21 +357,24 @@ function Update-Tool {
 }
 
 if ($Mode -eq 'help') {
-    Print-Help
+    Write-Help
 }
 elseif ($Mode -eq 'install') {
     Clear-TeXLive
-    Create-TempDir
+    New-TempDir
     Install-TeXLive
     Install-Fonts
     Clear-TempDir
 
+    Set-Location $currentDir
+
     Write-Color "{yellow}[INFO] 실행 파일을 {green}'$rootDir'{yellow} 안으로 옮기는 중..."
-    Move-Item -Path "$($PWD.Path)\mathletter.ps1" -Destination "$rootDir\mathletter.ps1"
+    Move-Item -Path "$currentDir\mathletter.ps1" -Destination "$rootDir\mathletter.ps1"
     Write-Color "{green}[INFO] 옮기기 완료"
 
+    New-CommonstuffDir
     Update-Sty
-    Fetch-Assets
+    Invoke-Assets
     Add-To-Path
     Write-Color "=====> {green}설치 완료 {gray}<====="
 }
@@ -377,11 +386,13 @@ elseif ($Mode -eq 'path') {
     Add-To-Path
 }
 elseif ($Mode -eq 'update-sty') {
+    New-CommonstuffDir
     Update-Sty
 }
 elseif ($Mode -eq 'update-tool') {
+    New-CommonstuffDir
     Update-Tool
-    Fetch-Assets
+    Invoke-Assets
 }
 elseif ($Mode -eq 'new') {
     New-Item -ItemType Directory -Force -Path "$rootDir\src" | Out-Null
@@ -389,7 +400,7 @@ elseif ($Mode -eq 'new') {
     if (-Not (($No) -and ($No -gt 0))) {
         Write-Color "{red}[ERROR] ML 번호가 주어지지 않았습니다."
         Write-Color ""
-        Print-Help
+        Write-Help
     }
     elseif (Test-Path "$rootDir\src\$No") {
         Write-Color "{red}[ERROR] $rootDir\src\$($No)이(가) 이미 존재합니다."
@@ -411,7 +422,7 @@ elseif ($Mode -eq 'open') {
     if (-Not (($No) -and ($No -gt 0))) {
         Write-Color "{red}[ERROR] ML 번호가 주어지지 않았습니다."
         Write-Color ""
-        Print-Help
+        Write-Help
     }
     elseif (Test-Path "$rootDir\src\$No") {
         Write-Color "{yellow}[INFO] ML $No 폴더를 여는 중..."
@@ -420,7 +431,7 @@ elseif ($Mode -eq 'open') {
     else {
         Write-Color "{red}[ERROR] $rootDir\src\$No 폴더가 존재하지 않습니다."
         Write-Color ""
-        Print-Help
+        Write-Help
     }
 }
 elseif ($Mode -eq 'article') {
@@ -429,22 +440,22 @@ elseif ($Mode -eq 'article') {
     if (-Not (($No) -and ($No -gt 0))) {
         Write-Color "{red}[ERROR] ML 번호가 주어지지 않았습니다."
         Write-Color ""
-        Print-Help
+        Write-Help
     }
     elseif (-Not ($Slug)) {
         Write-Color "{red}[ERROR] 아티클 폴더 이름이 주어지지 않았습니다."
         Write-Color ""
-        Print-Help
+        Write-Help
     }
     elseif (-Not ((Test-Path "$rootDir\src\$No\articles") -and (Test-Path "$rootDir\src\$No\build"))) {
         Write-Color "{red}[ERROR] ML $No 폴더가 존재하지 않습니다."
         Write-Color ""
-        Print-Help
+        Write-Help
     }
     elseif (Test-Path "$rootDir\src\$No\articles\$Slug") {
         Write-Color "{red}[ERROR] 아티클 $($Slug)이(가) 이미 존재합니다."
         Write-Color ""
-        Print-Help
+        Write-Help
     }
     else {
         Write-Color "{yellow}[INFO] ML$($No)에 새 아티클을 만드는 중..."
@@ -459,17 +470,17 @@ elseif ($Mode -eq 'compile') {
     if ($TEXLIVE_VERSION -eq '{red}NOT INSTALLED' -Or (-Not (Test-Path "$rootDir\texlive\$TEXLIVE_VERSION\bin\win32"))) {
         Write-Color "{red}[ERROR] 먼저 $($prefix)mathletter -mode install을 실행해 주세요."
         Write-Color ""
-        Print-Help
+        Write-Help
     }
     elseif (-Not (($No) -and ($No -gt 0))) {
         Write-Color "{red}[ERROR] ML 번호가 주어지지 않았습니다."
         Write-Color ""
-        Print-Help
+        Write-Help
     }
     elseif (-Not ((Test-Path "$rootDir\src\$No\articles") -and (Test-Path "$rootDir\src\$No\build"))) {
         Write-Color "{red}[ERROR] ML $No 폴더가 존재하지 않습니다."
         Write-Color ""
-        Print-Help
+        Write-Help
     }
     elseif (-Not ($Slug)) {
         Write-Color "{yellow}[INFO] ML$($No)의 모든 아티클을 조판하는 중..."
@@ -499,7 +510,7 @@ elseif ($Mode -eq 'compile') {
     elseif (-Not (Test-Path "$rootDir\src\$No\articles\$Slug")) {
         Write-Color "{red}[ERROR] 아티클 $($Slug)이 존재하지 않습니다."
         Write-Color ""
-        Print-Help
+        Write-Help
     }
     else {
         Set-Location "$rootDir\src\$No\articles\$Slug"
@@ -536,26 +547,26 @@ elseif ($Mode -eq 'cover') {
     if ($TEXLIVE_VERSION -eq '{red}NOT INSTALLED' -Or (-Not (Test-Path "$rootDir\texlive\$TEXLIVE_VERSION\bin\win32"))) {
         Write-Color "{red}[ERROR] 먼저 $($prefix)mathletter -mode install을 실행해 주세요."
         Write-Color ""
-        Print-Help
+        Write-Help
     }
     elseif (-Not (($No) -and ($No -gt 0))) {
         Write-Color "{red}[ERROR] ML 번호가 주어지지 않았습니다."
         Write-Color ""
-        Print-Help
+        Write-Help
     }
     elseif (-Not ((Test-Path "$rootDir\src\$No\cover") -and (Test-Path "$rootDir\src\$No\build"))) {
         Write-Color "{red}[ERROR] ML $No 폴더가 존재하지 않습니다."
         Write-Color ""
-        Print-Help
+        Write-Help
     }
     elseif (-Not (Test-Path "$rootDir\src\$No\cover\cover.json")) {
         Write-Color "{red}[ERROR] cover.json 파일이 존재하지 않습니다."
         Write-Color ""
-        Print-Help
+        Write-Help
     }
     else {
         if (-Not ((Test-Path "$commonstuffDir\math.pdf") -and (Test-Path "$commonstuffDir\logo.pdf") -and (Test-Path "$commonstuffDir\cover.tex.ps1.template"))) {
-            Fetch-Assets
+            Invoke-Assets
         }
         Write-Color "{yellow}[INFO] cover.tex 파일을 만드는 중..."
 
@@ -611,7 +622,7 @@ elseif ($Mode -eq 'cover') {
 else {
     Write-Color "{red}[ERROR] 알 수 없는 모드입니다."
     Write-Color ""
-    Print-Help
+    Write-Help
 }
 
 Set-Location $currentDir

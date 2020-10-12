@@ -397,6 +397,24 @@ elseif ($Mode -eq 'install') {
     Add-To-Path
     Write-Color "=====> {green}설치 완료 {gray}<====="
 }
+elseif ($Mode -eq 'postinstall') {
+    Set-Location $rootDir
+    
+    $TEXLIVE_DISTS = (Get-ChildItem "texlive" | ForEach-Object { $_.Name } | Where-Object { $_ -match "^\d+$" } | ForEach-Object { [int]$_ } | Measure-Object -Maximum)
+    if ($TEXLIVE_DISTS.Count -gt 0) {
+        $TEXLIVE_VERSION = $TEXLIVE_DISTS.Maximum
+    }
+    
+    # install additional packages
+    $tlmgrPath = "$rootDir\texlive\$TEXLIVE_VERSION\bin\win32\tlmgr.bat"
+    $texPackages = 'mwe changepage tcolorbox environ trimspaces ulem xifthen ifmtarg titlesec biblatex adjustbox collectbox tikz-cd pgfplots enumitem forloop minted varwidth datetime pagecolor fmtcount'
+    Write-Color "{yellow}[INFO] 추가 패키지를 설치하는 중..."
+    Start-Process `
+        -NoNewWindow -Wait `
+        -FilePath $tlmgrPath `
+        -ArgumentList "install $texPackages"
+    Write-Color "{green}[INFO] 추가 패키지 설치 완료"
+}
 elseif ($Mode -eq 'font') {
     Install-Fonts
     Clear-TempDir

@@ -156,16 +156,23 @@ function Write-Help {
 }
 
 function Add-To-Path {
+    $TEXLIVE_DISTS = (Get-ChildItem "texlive" | ForEach-Object { $_.Name } | Where-Object { $_ -match "^\d+$" } | ForEach-Object { [int]$_ } | Measure-Object -Maximum)
+    if ($TEXLIVE_DISTS.Count -gt 0) {
+        $TEXLIVE_VERSION = $TEXLIVE_DISTS.Maximum
+    }
+    
+    # install additional packages
+    $binPath = "$rootDir\texlive\$TEXLIVE_VERSION\bin\win32"
     Write-Color "{yellow}[INFO] 환경 변수 PATH에 추가하는 중..."
-    if (($path -like "*;$rootDir;*") -Or ($path -like "*;$rootDir")) {
+    if (($path -like "*;$rootDir;$binPath;*") -Or ($path -like "*;$rootDir;$binPath")) {
         Write-Color "{yellow}[INFO] 이미 PATH에 등록되어 있습니다."
     }
     else {
         if ($path.EndsWith(";")) {
-            $path += "$rootDir;"
+            $path += "$rootDir;$binPath;"
         }
         else {
-            $path += ";$rootDir"
+            $path += ";$rootDir;$binPath"
         }
         $env:Path = $path
         Start-Process -Wait powershell -Verb runAs "[Environment]::SetEnvironmentVariable('path', '$path', [System.EnvironmentVariableTarget]::Machine); [Environment]::SetEnvironmentVariable('path', '$path', [System.EnvironmentVariableTarget]::Process); [Environment]::SetEnvironmentVariable('path', '$path', [System.EnvironmentVariableTarget]::User);"

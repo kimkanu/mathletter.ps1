@@ -1,4 +1,4 @@
-﻿param([string]$Mode = 'help', [int]$No, [string]$Slug, [switch]$Single = $false, [switch]$ShellEscape = $false)
+param([string]$Mode = 'help', [int]$No, [string]$Slug, [switch]$Single = $false, [switch]$ShellEscape = $false)
 
 $VERSION = '0.1.1'
 

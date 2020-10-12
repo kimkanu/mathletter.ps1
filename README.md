@@ -19,6 +19,12 @@ https://github.com/kimkanu/mathletter.ps1/releases
 
 그 후, `.\mathletter -mode install`로 설치합니다.
 
+`보안 오류: (:) [], PSSecurityException`가 발생하면
+```powershell
+Set-ExecutionPolicy Unrestricted
+```
+을 실행한 후에 다시 시도해주세요.
+
 ### 설치 이후
 
 `mathletter -mode help`를 참조하셔도 됩니다.

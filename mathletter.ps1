@@ -1,6 +1,8 @@
 ﻿param([string]$Mode = 'help', [int]$No, [string]$Slug, [switch]$Single = $false, [switch]$ShellEscape = $false)
 
-$VERSION = '0.1.5'
+$Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
+
+$VERSION = '0.1.6'
 
 $MATHLETTER_STY_RAW_REPO = 'https://raw.githubusercontent.com/msquare-kaist/mathletter-package/master'
 $MATHLETTER_PS1_RAW_REPO = 'https://raw.githubusercontent.com/kimkanu/mathletter.ps1/master'
@@ -528,8 +530,8 @@ elseif ($Mode -eq 'article') {
     else {
         Write-Color "{yellow}[INFO] ML$($No)에 새 아티클을 만드는 중..."
         New-Item -ItemType directory -Path "$rootDir\src\$No\articles\$Slug" | Out-Null
-        Set-Content -Path "$rootDir\src\$No\articles\$Slug\$Slug.tex" -Value $sampleTeXContent
-        Set-Content -Path "$rootDir\src\$No\articles\$Slug\$Slug.bib" -Value $sampleBibContent
+        [System.IO.File]::WriteAllLines("$rootDir\src\$No\articles\$Slug\$Slug.tex", $sampleTeXContent, $Utf8NoBomEncoding)
+        [System.IO.File]::WriteAllLines("$rootDir\src\$No\articles\$Slug\$Slug.bib", $sampleBibContent, $Utf8NoBomEncoding)
     }
 }
 elseif ($Mode -eq 'compile') {
@@ -670,7 +672,6 @@ elseif ($Mode -eq 'cover') {
             Replace('<Profs>', $json.Club.Profs).
             Replace('<Publisher>', $json.Club.Publisher)
 
-        $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
         [System.IO.File]::WriteAllLines("$rootDir\src\$No\cover\cover.tex", $coverContent, $Utf8NoBomEncoding)
 
         Set-Location "$rootDir\src\$No\cover"

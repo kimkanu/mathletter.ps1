@@ -331,6 +331,7 @@ function Install-Fonts {
 
     Write-Color "{green}[INFO] 폰트 다운로드 완료"
     Write-Color "{green}[INFO] {red}(중요){green} $rootDir\fonts 폴더에 들어가서 폰트를 모두 선택 후 '모든 사용자용으로' 설치해주세요."
+    Invoke-Item "$rootDir\fonts"
 }
 
 function New-CommonstuffDir {

@@ -480,7 +480,7 @@ elseif ($Mode -eq 'new') {
 
         New-Item -ItemType directory -Path "$rootDir\src\$No\cover" | Out-Null
         Copy-Item "$commonstuffDir\cover.json" -Destination "$rootDir\src\$No\cover"
-
+        Write-Color "{yellow}[INFO] $rootDir\src\$No 폴더에 생성 완료"
     }
 }
 elseif ($Mode -eq 'open') {

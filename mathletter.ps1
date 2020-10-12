@@ -371,9 +371,11 @@ function Invoke-Assets {
 }
 
 function Update-Tool {
-    Write-Color "{yellow}[INFO] MathLetter.ps1을 업데이트 하는 중..."
-    $newestVersionString = (New-Object System.Net.WebClient).DownloadString("$MATHLETTER_PS1_RAW_REPO/VERSION")
+    $newestVersionString = (New-Object System.Net.WebClient).
+        DownloadString("$MATHLETTER_PS1_RAW_REPO/VERSION").
+        Replace("`n", '')
     if ($newestVersionString -eq $VERSION) {
+        Write-Color "{yellow}[INFO] MathLetter.ps1을 업데이트 하는 중..."
         Write-Color "{green}[INFO] MathLetter.ps1이 이미 최신 버전입니다."
     }
     else {
@@ -386,11 +388,13 @@ function Update-Tool {
 }
 
 function Update-Tool-Quiet {
-    Write-Color "{yellow}[INFO] MathLetter.ps1을 업데이트 하는 중..."
-    $newestVersionString = (New-Object System.Net.WebClient).DownloadString("$MATHLETTER_PS1_RAW_REPO/VERSION")
+    $newestVersionString = (New-Object System.Net.WebClient).
+        DownloadString("$MATHLETTER_PS1_RAW_REPO/VERSION").
+        Replace("`n", '')
     if ($newestVersionString -eq $VERSION) {
     }
     else {
+        Write-Color "{yellow}[INFO] MathLetter.ps1을 업데이트 하는 중..."
         Invoke-WebRequest `
             -OutFile "$rootDir\mathletter.ps1" `
             -Uri "$MATHLETTER_PS1_RAW_REPO/mathletter.ps1"

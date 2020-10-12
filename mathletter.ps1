@@ -161,9 +161,19 @@ function Add-To-Path {
         $TEXLIVE_VERSION = $TEXLIVE_DISTS.Maximum
     }
     
-    # install additional packages
     $binPath = "$rootDir\texlive\$TEXLIVE_VERSION\bin\win32"
     Write-Color "{yellow}[INFO] 환경 변수 PATH에 추가하는 중..."
+    
+    if (($path -like "*;$($env:systemroot)\System32;*") -Or ($path -like "$($env:systemroot)\System32;*") -Or ($path -like "*;$($env:systemroot)\System32")) {
+    }
+    else {
+        if (($path -eq "") -or $path.EndsWith(";")) {
+            $path += "$($env:systemroot)\System32;"
+        }
+        else {
+            $path += ";$($env:systemroot)\System32"
+        }
+    }
     if (($path -like "*;$rootDir;$binPath;*") -Or ($path -like "*;$rootDir;$binPath")) {
         Write-Color "{yellow}[INFO] 이미 PATH에 등록되어 있습니다."
     }

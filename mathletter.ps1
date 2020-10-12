@@ -1,6 +1,6 @@
 ﻿param([string]$Mode = 'help', [int]$No, [string]$Slug, [switch]$Single = $false, [switch]$ShellEscape = $false)
 
-$VERSION = '0.1.3'
+$VERSION = '0.1.4'
 
 $MATHLETTER_STY_RAW_REPO = 'https://raw.githubusercontent.com/msquare-kaist/mathletter-package/master'
 $MATHLETTER_PS1_RAW_REPO = 'https://raw.githubusercontent.com/kimkanu/mathletter.ps1/master'
@@ -385,6 +385,22 @@ function Update-Tool {
     }
 }
 
+function Update-Tool-Quiet {
+    Write-Color "{yellow}[INFO] MathLetter.ps1을 업데이트 하는 중..."
+    $newestVersionString = (New-Object System.Net.WebClient).DownloadString("$MATHLETTER_PS1_RAW_REPO/VERSION")
+    if ($newestVersionString -eq $VERSION) {
+    }
+    else {
+        Invoke-WebRequest `
+            -OutFile "$rootDir\mathletter.ps1" `
+            -Uri "$MATHLETTER_PS1_RAW_REPO/mathletter.ps1"
+        
+        Write-Color "{green}[INFO] MathLetter.ps1 업데이트 완료"
+    }
+}
+
+Update-Tool-Quiet
+
 if ($Mode -eq 'help') {
     Write-Help
 }
@@ -617,13 +633,13 @@ elseif ($Mode -eq 'cover') {
         }
         Write-Color "{yellow}[INFO] cover.tex 파일을 만드는 중..."
 
-        $json = (Get-Content "$rootDir\src\$No\cover\cover.json").Replace('<Issue>', $No) | ConvertFrom-Json
+        $json = (Get-Content "$rootDir\src\$No\cover\cover.json") | ConvertFrom-Json
         $articles = $json.Articles | Foreach-Object { "  [$($_.Title)]%" } | Join-String -Separator "`n"
         $articlePages = $json.Articles | Foreach-Object { "  [$($_.Page)]%" } | Join-String -Separator "`n"
         $problems = $json.Problems | Foreach-Object { "  [$($_.Title)]%" } | Join-String -Separator "`n"
         $problemPages = $json.Problems | Foreach-Object { "  [$($_.Page)]%" } | Join-String -Separator "`n"
         $coverContent = (Get-Content "$commonstuffDir\cover.tex.ps1.template").
-            Replace('<IssueNumber>', $json.Issue).
+            Replace('<IssueNumber>', $No).
             Replace('<Month>', $json.Month).
             Replace('<Year>', $json.Year).
             Replace('<DateIssuedKor>', $json.DateIssuedKor).

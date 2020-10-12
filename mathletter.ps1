@@ -91,8 +91,6 @@ $sampleBibContent = @'
 '@
 
 $path = [Environment]::GetEnvironmentVariable('path', 'machine');
-Write-Host "$path"
-Write-Host "$rootDir"
 if (($path -like "*$rootDir*") -And (Test-Path -Path "$rootDir\mathletter.ps1")) {
     $prefix = ""
 } else {

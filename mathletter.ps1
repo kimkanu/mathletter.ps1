@@ -1,6 +1,6 @@
 ﻿param([string]$Mode = 'help', [int]$No, [string]$Slug, [switch]$Single = $false, [switch]$ShellEscape = $false)
 
-$VERSION = '0.1.4'
+$VERSION = '0.1.5'
 
 $MATHLETTER_STY_RAW_REPO = 'https://raw.githubusercontent.com/msquare-kaist/mathletter-package/master'
 $MATHLETTER_PS1_RAW_REPO = 'https://raw.githubusercontent.com/kimkanu/mathletter.ps1/master'
@@ -637,12 +637,12 @@ elseif ($Mode -eq 'cover') {
         }
         Write-Color "{yellow}[INFO] cover.tex 파일을 만드는 중..."
 
-        $json = (Get-Content "$rootDir\src\$No\cover\cover.json") | ConvertFrom-Json
-        $articles = $json.Articles | Foreach-Object { "  [$($_.Title)]%" } | Join-String -Separator "`n"
-        $articlePages = $json.Articles | Foreach-Object { "  [$($_.Page)]%" } | Join-String -Separator "`n"
-        $problems = $json.Problems | Foreach-Object { "  [$($_.Title)]%" } | Join-String -Separator "`n"
-        $problemPages = $json.Problems | Foreach-Object { "  [$($_.Page)]%" } | Join-String -Separator "`n"
-        $coverContent = (Get-Content "$commonstuffDir\cover.tex.ps1.template").
+        $json = (Get-Content -Encoding utf8 "$rootDir\src\$No\cover\cover.json") | ConvertFrom-Json
+        $articles = ($json.Articles | Foreach-Object { "  [$($_.Title)]%" }) -join "`n"
+        $articlePages = ($json.Articles | Foreach-Object { "  [$($_.Page)]%" }) -join "`n"
+        $problems = ($json.Problems | Foreach-Object { "  [$($_.Title)]%" }) -join "`n"
+        $problemPages = ($json.Problems | Foreach-Object { "  [$($_.Page)]%" }) -join "`n"
+        $coverContent = (Get-Content -Encoding utf8 "$commonstuffDir\cover.tex.ps1.template").
             Replace('<IssueNumber>', $No).
             Replace('<Month>', $json.Month).
             Replace('<Year>', $json.Year).
@@ -668,7 +668,9 @@ elseif ($Mode -eq 'cover') {
             Replace('<SubscriptionPay>', $json.Club.SubscriptionPay).
             Replace('<Profs>', $json.Club.Profs).
             Replace('<Publisher>', $json.Club.Publisher)
-        Set-Content -Path "$rootDir\src\$No\cover\cover.tex" -Value $coverContent
+
+        $Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
+        [System.IO.File]::WriteAllLines("$rootDir\src\$No\cover\cover.tex", $coverContent, $Utf8NoBomEncoding)
 
         Set-Location "$rootDir\src\$No\cover"
 

@@ -1,6 +1,6 @@
 ﻿param([string]$Mode = 'help', [int]$No, [string]$Slug, [switch]$Single = $false, [switch]$ShellEscape = $false)
 
-$VERSION = '0.1.0'
+$VERSION = '0.1.1'
 
 $MATHLETTER_STY_RAW_REPO = 'https://raw.githubusercontent.com/msquare-kaist/mathletter-package/master'
 $MATHLETTER_PS1_RAW_REPO = 'https://raw.githubusercontent.com/kimkanu/mathletter.ps1/master'

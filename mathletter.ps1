@@ -268,6 +268,8 @@ function Install-TeXLive {
         -ArgumentList "-no-gui -profile $tempDir\texlive.profile -non-admin"
     Write-Color "{green}[INFO] TeX Live 설치 완료"
     
+    Set-Location $rootDir
+    
     $TEXLIVE_DISTS = (Get-ChildItem "texlive" | ForEach-Object { $_.Name } | Where-Object { $_ -match "^\d+$" } | ForEach-Object { [int]$_ } | Measure-Object -Maximum)
     if ($TEXLIVE_DISTS.Count -gt 0) {
         $TEXLIVE_VERSION = $TEXLIVE_DISTS.Maximum

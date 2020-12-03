@@ -217,8 +217,7 @@ function New-TempDir {
 }
 
 function Install-TeXLive {
-    @((Invoke-Webrequest -URI https://www.tug.org/texlive/acquire.html).ParsedHtml.getElementsByTagName("p"))[0].innerText -match "[0-9]+" | Out-Null
-    $RECENT_TEXLIVE_VERSION = $Matches.0
+    $RECENT_TEXLIVE_VERSION = 2020
     $texliveProfilePath = "$tempDir\texlive.profile"
     $texliveProfileContent = @"
     # texlive.profile written on Sun Aug 23 09:49:02 2020 UTC
